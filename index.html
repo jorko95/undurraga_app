@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2380E0">
+<title>Árbol de Detenciones · Undurraga · mtsolutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  color:#434448;background:#F5F6F8;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+:root{
+  --mts-blue:#2380E0;--mts-orange:#FC8021;--mts-ink:#434448;
+  --mts-success:#22A06B;--mts-success-bg:#E6F6EE;
+  --mts-danger:#E5484D;--mts-danger-bg:#FCEAEA;
+  --mts-warning:#F5A524;--mts-warning-bg:#FFF4DE;
+  --surface:#FFFFFF;--bg-3:#FAFBFC;--bg:#F5F6F8;--bg-2:#F0F2F5;
+  --line:#E5E8EE;--ink-4:#C3C8D0;--ink-3:#9097A1;--ink-2:#6B6E76;
+  --font:'Inter',-apple-system,sans-serif;--mono:'JetBrains Mono',monospace;
+}
+
+/* full-screen app, no card frame on real device */
+.app-root{
+  min-height:100vh;
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+  background:var(--bg);
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+
+.appbar{height:52px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 14px;gap:8px;flex-shrink:0}
+.appbar-logo{display:flex;align-items:center;flex:1;min-width:0}
+.appbar-logo svg{height:20px;width:auto;display:block}
+.tab-pill{font-size:10px;color:var(--ink-2);background:var(--bg-2);padding:3px 8px;border-radius:999px;flex-shrink:0}
+
+.subbar{display:flex;background:var(--surface);border-bottom:1px solid var(--line);padding:0 10px;flex-shrink:0}
+.subtab{flex:1;text-align:center;padding:11px 4px;font-size:13px;font-weight:500;color:var(--ink-3);border:none;background:none;font-family:var(--font);border-bottom:2px solid transparent;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color 150ms}
+.subtab.on{color:var(--mts-blue);border-bottom-color:var(--mts-blue)}
+.subtab i{font-size:18px}
+
+.scroll-area{flex:1;overflow-y:auto;padding:14px 14px calc(24px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+
+.stats-row{display:flex;gap:8px;margin-bottom:14px}
+.stat-card{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 6px;text-align:center}
+.stat-n{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.stat-l{font-size:9px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-top:3px}
+.stat-ok{color:var(--mts-success)}.stat-wn{color:var(--mts-warning)}.stat-er{color:var(--mts-danger)}
+
+.fam-section{margin-bottom:14px}
+.fam-toggle{display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fam-toggle.exp{border-radius:12px 12px 0 0;border-bottom:none}
+.fam-stripe{width:4px;height:22px;border-radius:2px;flex-shrink:0}
+.fam-name{font-size:13px;font-weight:600;color:var(--mts-ink);flex:1;text-transform:uppercase;letter-spacing:0.02em}
+.fam-count{font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px}
+.fam-chev{font-size:16px;color:var(--ink-3);transition:transform 200ms;flex-shrink:0}
+.fam-chev.up{transform:rotate(180deg)}
+
+.fam-body{background:var(--surface);border:1px solid var(--line);border-top:none;border-radius:0 0 12px 12px;padding:6px 10px 10px;display:none}
+.fam-body.show{display:block}
+
+.grp-block{margin-top:10px}
+.grp-label{font-size:10px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.05em;padding:4px 4px;display:flex;align-items:center;gap:4px}
+
+.code-row{display:flex;align-items:center;gap:8px;padding:9px 6px;border-bottom:1px solid var(--bg-2);-webkit-tap-highlight-color:transparent}
+.code-row:last-child{border-bottom:none}
+.code-id{font-size:10px;font-weight:600;font-family:var(--mono);color:var(--ink-2);width:28px;flex-shrink:0}
+.code-name{font-size:12.5px;color:var(--mts-ink);flex:1;line-height:1.35}
+.code-badges{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.mant-flag{font-size:14px;color:var(--ink-3)}
+.st-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.st-activo{background:var(--mts-success)}.st-nuevo{background:var(--mts-warning)}.st-desact{background:var(--mts-danger)}
+
+.legend-row{display:flex;align-items:center;gap:10px;padding:8px 4px 12px;flex-wrap:wrap}
+.legend-i{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--ink-2)}
+
+.add-btn-row{display:flex;gap:8px;margin-top:6px;margin-bottom:14px}
+.tap-btn{flex:1;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);font-size:12px;font-weight:500;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:5px;-webkit-tap-highlight-color:transparent}
+.tap-btn:active{background:var(--bg-2)}
+.tap-btn.primary{background:var(--mts-orange);color:#fff;border:none}
+.tap-btn.primary:active{opacity:.85}
+
+.op-line-bar{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--ink-2);display:flex;align-items:center;justify-content:space-between}
+.op-line-bar b{color:var(--mts-ink);font-weight:600}
+
+.step-block{margin-bottom:14px}
+.step-head{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.step-circle{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;border:1.5px solid var(--line);background:var(--bg-2);color:var(--ink-2)}
+.step-circle.act{background:var(--mts-orange);color:#fff;border-color:var(--mts-orange)}
+.step-circle.dn{background:var(--mts-success-bg);color:var(--mts-success);border-color:var(--mts-success)}
+.step-text{font-size:13px;font-weight:500;color:var(--ink-2)}
+.step-text.act{color:var(--mts-ink);font-weight:600}
+.step-line{width:1.5px;height:10px;background:var(--line);margin-left:13px}
+
+.bigselect-wrap{position:relative}
+.bigselect{width:100%;height:50px;padding:0 38px 0 16px;border:1.5px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink-2);font-size:15px;font-family:var(--font);appearance:none;-webkit-appearance:none}
+.bigselect:focus{outline:none;border-color:var(--mts-blue)}
+.bigselect.filled{color:var(--mts-ink);font-weight:500;border-color:var(--ink-4)}
+.bigselect-arrow{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--ink-3);pointer-events:none}
+
+.crumb-row{display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.crumb{font-size:11px;font-weight:500;padding:4px 10px;border-radius:999px}
+.crumb-sep{font-size:11px;color:var(--ink-4)}
+
+.confirm-block{background:var(--surface);border:1.5px solid var(--mts-success);border-radius:14px;padding:16px}
+.confirm-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
+.confirm-circle{width:38px;height:38px;border-radius:50%;background:var(--mts-success-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.confirm-title{font-size:14px;font-weight:600;color:var(--mts-ink);line-height:1.3}
+.confirm-sub{font-size:11px;color:var(--ink-2);margin-top:2px}
+.confirm-rows{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px}
+.crow{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--bg-2)}
+.crow:last-child{border:none}
+.crow .lb{color:var(--ink-2);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em}
+.crow .vl{font-weight:500;color:var(--mts-ink);text-align:right;max-width:60%}
+
+.mant-block{background:var(--bg-3);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px}
+.mant-head{display:flex;align-items:center;gap:7px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.mant-head span{font-size:12px;font-weight:600;color:var(--mts-ink);text-transform:uppercase;letter-spacing:0.04em;flex:1}
+.mant-badge{font-size:9px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--mts-warning-bg);color:#92400E}
+
+.eq-row{display:flex;gap:8px;margin-bottom:12px}
+.eq-btn{flex:1;height:40px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-2);font-size:13px;font-weight:500;font-family:var(--font)}
+.eq-btn.on{background:var(--mts-blue);color:#fff;border-color:var(--mts-blue)}
+
+.causa-grid-m{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.causa-btn-m{padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink-2);font-size:12px;font-family:var(--font);display:flex;align-items:center;gap:7px;text-align:left}
+.causa-btn-m.on{border-color:var(--mts-blue);background:#E3F0FC;color:var(--mts-ink);font-weight:500}
+.causa-dot-m{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+.field-grid{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.field-grid select,.field-grid input,.field-grid textarea{width:100%;font-size:13px;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--mts-ink);font-family:var(--font)}
+.field-grid textarea{resize:none;height:64px}
+.field-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.field-row2 select{font-size:12px;padding:11px 8px}
+
+.section-lbl-m{font-size:10px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+
+.action-row-m{display:flex;gap:8px;margin-top:14px}
+.action-row-m .tap-btn{height:48px;font-size:13px}
+
+.reg-block{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.reg-stamp{font-size:11px;color:var(--ink-3);font-family:var(--mono);margin-top:3px}
+.alert-box{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:var(--mts-warning-bg);margin-top:12px;font-size:12px;color:#7C4B00}
+
+.modal-bg-m{position:fixed;inset:0;background:rgba(67,68,72,.4);display:flex;align-items:flex-end;justify-content:center;z-index:99}
+.modal-m{background:var(--surface);border-radius:18px 18px 0 0;padding:18px 16px calc(24px + env(safe-area-inset-bottom));width:100%;max-width:480px;max-height:80vh;overflow-y:auto}
+.modal-m h3{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--mts-ink)}
+.modal-m label{font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px;margin-top:10px;text-transform:uppercase;letter-spacing:0.04em}
+.modal-m input,.modal-m select{width:100%;font-size:14px;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg-3);color:var(--mts-ink);font-family:var(--font)}
+.modal-actions-m{display:flex;gap:8px;margin-top:16px}
+.modal-actions-m button{flex:1;height:46px;border-radius:10px;font-size:13px;font-weight:500;font-family:var(--font)}
+
+.toast-m{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--mts-ink);color:#fff;font-size:12px;font-weight:500;padding:9px 18px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:200;white-space:nowrap}
+.toast-m.on{opacity:1}
+
+/* desktop: cap width so it doesn't stretch ugly on wide screens */
+@media (min-width:480px){
+  .app-root{max-width:480px;margin:0 auto;box-shadow:0 0 40px rgba(0,0,0,.06)}
+}
+
+::-webkit-scrollbar{width:0;height:0}
+</style>
+</head>
+<body>
+
+<div class="app-root" id="app">
+
+<div class="appbar">
+  <div class="appbar-logo">
+    <svg viewBox="0 0 585.44 124.82" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="logoGrad" x1="-2952.65" y1="-2357.75" x2="-2881.68" y2="-2428.73" gradientTransform="translate(-2854.76 -2330.83) rotate(-180)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2380e0"/><stop offset="0" stop-color="#2480de"/><stop offset=".2" stop-color="#6580a5"/><stop offset=".38" stop-color="#9a8076"/><stop offset=".55" stop-color="#c48051"/><stop offset=".7" stop-color="#e38036"/><stop offset=".82" stop-color="#f58026"/><stop offset=".92" stop-color="#fc8021"/></linearGradient></defs><g><g><path d="M9.48 79.77c14.27 9.16 26.4 21.29 35.56 35.56 8.12 12.65 26.6 12.65 34.73 0 9.16-14.27 21.29-26.4 35.56-35.56 12.65-8.12 12.65-26.6 0-34.73A118 118 0 0 1 79.77 9.48c-8.12-12.65-26.6-12.65-34.73 0A118 118 0 0 1 9.48 45.04c-12.65 8.12-12.65 26.6 0 34.73m52.09-49.02c17.49 0 31.66 14.17 31.66 31.66S79.06 94.07 61.57 94.07 29.91 79.9 29.91 62.41s14.17-31.66 31.66-31.66" fill="url(#logoGrad)"/><path d="M92.42 55.25c.53 2.3.81 4.69.81 7.15s-.28 4.85-.81 7.15c-2.56 11.1-10.96 19.96-21.79 23.19 2.71.76 5.56 1.17 8.5 1.17 4.37 0 8.52-.89 12.3-2.49 11.29-4.79 19.21-15.98 19.21-29.02s-7.92-24.23-19.21-29.02a31.3 31.3 0 0 0-12.3-2.49c-2.95 0-5.8.41-8.5 1.17 10.83 3.23 19.23 12.09 21.79 23.19" style="mix-blend-mode:multiply" fill="#2380e0" opacity=".5"/><path d="M33.39 91.43c3.78 1.6 7.94 2.49 12.3 2.49 2.62 0 5.17-.34 7.6-.95-10.19-2.75-18.34-10.46-21.71-20.38-1.08-3.2-1.67-6.62-1.67-10.18s.59-6.99 1.67-10.18c3.37-9.92 11.52-17.63 21.71-20.38a31.3 31.3 0 0 0-7.6-.95c-4.37 0-8.52.89-12.3 2.49-11.29 4.79-19.21 15.98-19.21 29.02s7.92 24.23 19.21 29.02" style="mix-blend-mode:color-burn" fill="#56ace7" opacity=".5"/><path d="M33.39 91.43c4.79 11.29 15.98 19.21 29.02 19.21s24.23-7.92 29.02-19.21c1.61-3.78 2.49-7.94 2.49-12.3 0-3.34-.54-6.54-1.51-9.56-2.56 11.1-10.96 19.96-21.79 23.19-2.87.85-5.91 1.32-9.05 1.32-2.86 0-5.64-.38-8.27-1.09-10.19-2.75-18.34-10.46-21.71-20.38a31.46 31.46 0 0 0 1.8 18.83Z" style="mix-blend-mode:color-burn" fill="#56ace7" opacity=".5"/><path d="M31.58 52.23c3.37-9.92 11.52-17.63 21.71-20.38a31.8 31.8 0 0 1 8.27-1.09c3.15 0 6.19.46 9.05 1.32 10.83 3.23 19.23 12.09 21.79 23.19.96-3.02 1.51-6.22 1.51-9.56 0-4.37-.89-8.52-2.49-12.3C86.63 22.12 75.44 14.2 62.4 14.2s-24.23 7.92-29.02 19.21a31.5 31.5 0 0 0-1.8 18.83Z" style="mix-blend-mode:multiply" fill="#2380e0" opacity=".5"/><path d="M276.22 81.27c3.34 0 6.1-.55 8.28-1.66 2.18-1.1 3.27-2.97 3.27-5.6 0-1.25-.19-2.33-.58-3.22-.39-.9-1.03-1.7-1.92-2.42s-2.08-1.4-3.54-2.06-3.27-1.43-5.42-2.33q-2.595-1.08-4.92-2.19c-1.55-.75-2.93-1.61-4.12-2.6-1.19-.98-2.15-2.16-2.86-3.54-.72-1.37-1.07-3.04-1.07-5.01 0-3.76 1.42-6.81 4.25-9.13 2.83-2.33 6.73-3.49 11.68-3.49 3.16 0 5.78.27 7.84.81s3.5 1.02 4.34 1.43l-1.34 5.19c-.72-.36-1.93-.84-3.63-1.43-1.7-.6-4.19-.9-7.48-.9-1.31 0-2.55.14-3.72.4q-1.74.405-3.09 1.26a6.8 6.8 0 0 0-2.15 2.15q-.81 1.305-.81 3.18c0 1.875.24 2.33.72 3.23s1.18 1.69 2.1 2.38 2.06 1.33 3.4 1.92 2.88 1.25 4.61 1.96c1.79.71 3.51 1.44 5.15 2.18s3.09 1.64 4.34 2.68c1.25 1.05 2.27 2.3 3.04 3.76s1.16 3.3 1.16 5.51c0 4.18-1.57 7.34-4.7 9.49s-7.42 3.22-12.85 3.22c-4.06 0-7.16-.34-9.31-1.03s-3.58-1.21-4.3-1.57l1.52-5.28c.18.12.57.31 1.16.58.6.27 1.4.57 2.42.9 1.01.33 2.22.61 3.63.85 1.4.24 3.03.36 4.88.36Zm64.51-28.92c-1.04-2.98-2.51-5.54-4.39-7.66a19.7 19.7 0 0 0-6.67-4.92c-2.57-1.16-5.4-1.75-8.51-1.75s-5.94.58-8.51 1.75c-2.57 1.16-4.79 2.81-6.67 4.92-1.88 2.12-3.34 4.67-4.39 7.66s-1.57 6.3-1.57 9.94.52 6.95 1.57 9.94c1.04 2.99 2.51 5.52 4.39 7.61s4.1 3.72 6.67 4.88 5.4 1.75 8.51 1.75 5.94-.58 8.51-1.75c2.56-1.16 4.79-2.79 6.67-4.88s3.34-4.63 4.39-7.61c1.04-2.98 1.57-6.3 1.57-9.94s-.52-6.95-1.57-9.94m-8.64 23.73q-4.035 5.1-10.92 5.1c-6.885 0-8.24-1.7-10.92-5.1-2.69-3.4-4.03-8-4.03-13.79s1.34-10.4 4.03-13.83 6.33-5.15 10.92-5.15 8.24 1.72 10.92 5.15c2.69 3.43 4.03 8.04 4.03 13.83s-1.34 10.39-4.03 13.79m29.43 10.12c-1.97-.06-3.69-.31-5.15-.76s-2.69-1.13-3.67-2.06c-.98-.92-1.73-2.12-2.24-3.58s-.76-3.3-.76-5.51V16.98l5.82-1.07v58.2c0 1.43.13 2.58.4 3.45s.67 1.55 1.21 2.06 1.24.88 2.1 1.12q1.29.36 3.09.63l-.81 4.84Zm41.09-2.42c-1.73.48-4.06 1.02-6.98 1.61q-4.395.9-10.74.9c-3.46 0-6.36-.51-8.69-1.52s-4.21-2.45-5.64-4.3q-2.145-2.775-3.09-6.72c-.63-2.63-.94-5.52-.94-8.69V39.09h5.82v24.09c0 3.28.24 6.06.72 8.33s1.25 4.1 2.33 5.51c1.07 1.4 2.46 2.42 4.16 3.04 1.7.63 3.77.94 6.22.94 2.74 0 5.13-.15 7.16-.45s3.31-.57 3.85-.81V39.09h5.82v44.68ZM418.4 39.1h18.45v4.92H418.4v24.62c0 2.63.22 4.76.67 6.4q.675 2.46 1.92 3.81c.84.9 1.85 1.49 3.05 1.79 1.19.3 2.51.45 3.94.45 2.45 0 4.42-.28 5.91-.85s2.66-1.09 3.49-1.57l1.43 4.84c-.84.54-2.3 1.15-4.39 1.84s-4.36 1.03-6.81 1.03c-2.87 0-5.27-.37-7.21-1.12s-3.49-1.88-4.66-3.4-1.99-3.42-2.46-5.69c-.48-2.27-.72-4.95-.72-8.06V25.49l5.82-1.07V39.1Zm35.11-13.97c0 1.37-.42 2.46-1.25 3.27-.84.81-1.85 1.21-3.05 1.21s-2.21-.4-3.04-1.21c-.84-.81-1.25-1.89-1.25-3.27s.42-2.46 1.25-3.27 1.85-1.21 3.04-1.21 2.21.4 3.05 1.21c.83.81 1.25 1.9 1.25 3.27m-7.16 13.97h5.82v46.29h-5.82zm54.73 13.25c-1.04-2.98-2.51-5.54-4.39-7.66a19.7 19.7 0 0 0-6.67-4.92c-2.57-1.16-5.4-1.75-8.51-1.75s-5.94.58-8.51 1.75c-2.57 1.16-4.79 2.81-6.67 4.92-1.88 2.12-3.34 4.67-4.39 7.66s-1.57 6.3-1.57 9.94.52 6.95 1.57 9.94c1.04 2.99 2.51 5.52 4.39 7.61s4.1 3.72 6.67 4.88 5.4 1.75 8.51 1.75 5.94-.58 8.51-1.75c2.56-1.16 4.79-2.79 6.67-4.88s3.34-4.63 4.39-7.61c1.04-2.98 1.57-6.3 1.57-9.94s-.52-6.95-1.57-9.94m-8.64 23.73q-4.035 5.1-10.92 5.1c-6.885 0-8.24-1.7-10.92-5.1-2.69-3.4-4.03-8-4.03-13.79s1.34-10.4 4.03-13.83 6.33-5.15 10.92-5.15 8.24 1.72 10.92 5.15c2.69 3.43 4.03 8.04 4.03 13.83s-1.34 10.39-4.03 13.79m17.98-35.37c1.73-.48 4.06-1.01 6.98-1.61s6.51-.9 10.74-.9c3.52 0 6.46.51 8.82 1.52 2.36 1.02 4.24 2.46 5.64 4.34s2.4 4.13 3 6.76.89 5.52.89 8.69v25.88h-5.82v-24c0-3.28-.22-6.06-.67-8.33s-1.19-4.12-2.24-5.55c-1.04-1.43-2.42-2.46-4.12-3.09s-3.84-.94-6.4-.94c-2.75 0-5.12.15-7.12.45s-3.3.57-3.89.81v40.65h-5.82V40.71Zm57.47 40.56c3.34 0 6.1-.55 8.28-1.66 2.18-1.1 3.27-2.97 3.27-5.6 0-1.25-.19-2.33-.58-3.22-.39-.9-1.03-1.7-1.92-2.42s-2.08-1.4-3.54-2.06-3.27-1.43-5.42-2.33q-2.595-1.08-4.92-2.19c-1.55-.75-2.93-1.61-4.12-2.6-1.19-.98-2.15-2.16-2.86-3.54-.72-1.37-1.07-3.04-1.07-5.01 0-3.76 1.42-6.81 4.25-9.13 2.83-2.33 6.73-3.49 11.68-3.49 3.16 0 5.78.27 7.84.81s3.5 1.02 4.34 1.43l-1.34 5.19c-.72-.36-1.93-.84-3.63-1.43-1.7-.6-4.19-.9-7.48-.9-1.31 0-2.55.14-3.72.4q-1.74.405-3.09 1.26a6.8 6.8 0 0 0-2.15 2.15q-.81 1.305-.81 3.18c0 1.875.24 2.33.72 3.23s1.18 1.69 2.1 2.38 2.06 1.33 3.4 1.92 2.88 1.25 4.61 1.96c1.79.71 3.51 1.44 5.15 2.18s3.09 1.64 4.34 2.68c1.25 1.05 2.27 2.3 3.04 3.76s1.16 3.3 1.16 5.51c0 4.18-1.57 7.34-4.7 9.49s-7.42 3.22-12.85 3.22c-4.06 0-7.16-.34-9.31-1.03s-3.58-1.21-4.3-1.57l1.52-5.28c.18.12.57.31 1.16.58.6.27 1.4.57 2.42.9 1.01.33 2.22.61 3.63.85 1.4.24 3.03.36 4.88.36Zm-385.63-20.5c0-4.89-.61-8.43-1.84-10.61-1.22-2.18-3.51-3.27-6.85-3.27-1.19 0-2.51.09-3.94.27s-2.51.33-3.22.45V85.4h-10.83V40.09c2.09-.6 4.82-1.16 8.19-1.7s6.94-.81 10.7-.81c3.22 0 5.86.42 7.92 1.25 2.06.84 3.77 1.94 5.15 3.31.66-.48 1.49-.98 2.51-1.52 1.01-.54 2.15-1.03 3.4-1.48s2.58-.82 3.98-1.12 2.82-.45 4.25-.45c3.64 0 6.64.52 9 1.57s4.21 2.51 5.55 4.39 2.27 4.15 2.78 6.8c.51 2.66.76 5.57.76 8.73v26.32h-10.83V60.76c0-4.89-.6-8.43-1.79-10.61s-3.49-3.27-6.89-3.27c-1.73 0-3.37.28-4.92.85s-2.72 1.12-3.49 1.66c.48 1.49.81 3.08.99 4.75q.27 2.505.27 5.37v25.88h-10.83V60.77Zm73.46 14.69c-.87.33-1.98.69-3.37 1.07-1.52.42-3.27.63-5.24.63-2.87 0-4.9-.81-6.09-2.42s-1.79-4.3-1.79-8.06V47.61h13.94c.2-3.36 1.07-6.37 2.63-9.04h-16.58V24.42l-10.83 1.79v40.56q0 4.65.81 8.28c.54 2.42 1.46 4.48 2.78 6.18 1.31 1.7 3.09 3 5.33 3.9s5.03 1.34 8.37 1.34q4.08 0 7.11-.84z" fill="#2380e0"/></g></g></svg>
+  </div>
+  <span class="tab-pill">Undurraga</span>
+</div>
+
+<div class="subbar">
+  <button class="subtab on" id="to" onclick="setTab('op')">
+    <i class="ti ti-device-tablet" aria-hidden="true"></i>Vista operador
+  </button>
+  <button class="subtab" id="tc" onclick="setTab('cfg')">
+    <i class="ti ti-settings" aria-hidden="true"></i>Configurar
+  </button>
+</div>
+
+<div class="scroll-area" id="vop">
+  <div class="op-line-bar">
+    <span>Línea: <b>L1–L4 Undurraga</b></span>
+    <button class="tap-btn" style="height:32px;width:auto;padding:0 10px;font-size:11px" onclick="resetOp()"><i class="ti ti-refresh" aria-hidden="true"></i></button>
+  </div>
+  <div id="opsim"></div>
+</div>
+
+<div class="scroll-area" id="vcfg" style="display:none">
+  <div class="stats-row" id="sbar"></div>
+  <div id="famList"></div>
+  <div class="legend-row">
+    <span class="legend-i"><span class="st-dot st-activo"></span>Activo</span>
+    <span class="legend-i"><span class="st-dot st-nuevo"></span>Nuevo</span>
+    <span class="legend-i"><span class="st-dot st-desact"></span>Desact.</span>
+    <span class="legend-i"><i class="ti ti-tools" aria-hidden="true"></i>Capa mant.</span>
+  </div>
+  <div class="add-btn-row">
+    <button class="tap-btn" onclick="openNF()"><i class="ti ti-folder-plus" aria-hidden="true"></i>Familia</button>
+    <button class="tap-btn" onclick="openNC()"><i class="ti ti-plus" aria-hidden="true"></i>Código</button>
+    <button class="tap-btn primary" onclick="doExp()"><i class="ti ti-download" aria-hidden="true"></i>Exportar</button>
+  </div>
+</div>
+
+</div>
+
+<div class="toast-m" id="toast"></div>
+
+<script>
+const MC={
+  "MECÁNICAS":{color:"#2380E0",sub:["Transmisión","Levas","Transporte","Formato dañado","Operacional"]},
+  "ELÉCTRICAS":{color:"#7C5CFA",sub:["Tarjeta electrónica","Encoder","Sensor","Motor"]},
+  "NEUMÁTICAS":{color:"#22A06B",sub:["Válvulas neumáticas","Manguera","Conector"]},
+  "SOFTWARE":{color:"#F5A524",sub:["PLC","Operacional"]},
+  "SERVICIOS":{color:"#E5484D",sub:["Energía","Agua","Gases","Aire"]},
+};
+const EQUIPOS=["Llenadora","Etiquetadora"];
+
+const FC={
+  "TIEMPOS MUERTOS":{c:"#2380E0",bg:"#E3F0FC",tx:"#1456A0"},
+  "SET UP":{c:"#22A06B",bg:"#E6F6EE",tx:"#0E5C39"},
+  "DETENCION OTRA MAQUINA":{c:"#7C5CFA",bg:"#EDE9FE",tx:"#4C1D95"},
+  "ALERTA MANTENCION":{c:"#FC8021",bg:"#FEEBDA",tx:"#7C3B0A"},
+};
+const gc=(f,k)=>(FC[f]||{c:"#6B6E76",bg:"#F0F2F5",tx:"#434448"})[k];
+
+const POOL=[
+  {id:"A01",n:"Falla de máquina – sistema mecánico",f:"TIEMPOS MUERTOS",s1:"FALLA DE MÁQUINA",st:"NUEVO",ac:"Operador → Mant.",mant:true},
+  {id:"A02",n:"Falla de máquina – sistema eléctrico",f:"TIEMPOS MUERTOS",s1:"FALLA DE MÁQUINA",st:"NUEVO",ac:"Operador → Mant.",mant:true},
+  {id:"A03",n:"Falla de máquina – sistema neumático",f:"TIEMPOS MUERTOS",s1:"FALLA DE MÁQUINA",st:"NUEVO",ac:"Operador → Mant.",mant:true},
+  {id:"A04",n:"Falla de máquina – sistema control / PLC",f:"TIEMPOS MUERTOS",s1:"FALLA DE MÁQUINA",st:"NUEVO",ac:"Operador → Mant.",mant:true},
+  {id:"B01",n:"Volcamiento / atasco de botellas",f:"TIEMPOS MUERTOS",s1:"FALLA OPERACIONAL",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"B02",n:"Atasco de corcho o screw cap",f:"TIEMPOS MUERTOS",s1:"FALLA OPERACIONAL",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"B03",n:"Ajustes operacionales",f:"TIEMPOS MUERTOS",s1:"FALLA OPERACIONAL",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"B04",n:"Cuadratura de pedido",f:"TIEMPOS MUERTOS",s1:"FALLA OPERACIONAL",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"B05",n:"Desaperchado lento",f:"TIEMPOS MUERTOS",s1:"FALLA OPERACIONAL",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"B06",n:"Acumulación de botellas",f:"TIEMPOS MUERTOS",s1:"FALLA OPERACIONAL",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"C01",n:"Insumo defectuoso en línea",f:"TIEMPOS MUERTOS",s1:"COMPORTAMIENTO DE INSUMOS",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"C02",n:"Carga de insumo en máquina",f:"TIEMPOS MUERTOS",s1:"COMPORTAMIENTO DE INSUMOS",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"C03",n:"Falta de insumo (bodega materiales)",f:"TIEMPOS MUERTOS",s1:"COMPORTAMIENTO DE INSUMOS",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"D01",n:"Falta de vino / espumante (percha)",f:"TIEMPOS MUERTOS",s1:"ABASTECIMIENTO BODEGA",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"D02",n:"Falta de bins (bodega percha)",f:"TIEMPOS MUERTOS",s1:"ABASTECIMIENTO BODEGA",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"E01",n:"Reproceso de producto en línea",f:"TIEMPOS MUERTOS",s1:"CALIDAD",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"E02",n:"Parada por instrucción de calidad",f:"TIEMPOS MUERTOS",s1:"CALIDAD",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"F01",n:"Parada planificada",f:"TIEMPOS MUERTOS",s1:"PLANIFICACIÓN",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"F02",n:"Mantención planeada",f:"TIEMPOS MUERTOS",s1:"PLANIFICACIÓN",st:"ACTIVO",ac:"Operador → Mant.",mant:true},
+  {id:"F03",n:"Partida de vino / espumante (laboratorio)",f:"TIEMPOS MUERTOS",s1:"PLANIFICACIÓN",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"F04",n:"Término de vino – soplado / cuadratura",f:"TIEMPOS MUERTOS",s1:"PLANIFICACIÓN",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"F05",n:"Sanitizado / limpieza final de turno",f:"TIEMPOS MUERTOS",s1:"PLANIFICACIÓN",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"F06",n:"Error en programación de línea",f:"TIEMPOS MUERTOS",s1:"PLANIFICACIÓN",st:"ACTIVO",ac:"Planificación",mant:false},
+  {id:"F07",n:"Acción correctiva",f:"TIEMPOS MUERTOS",s1:"PLANIFICACIÓN",st:"ACTIVO",ac:"Supervisor",mant:false},
+  {id:"G01",n:"Falta de personal",f:"TIEMPOS MUERTOS",s1:"EVENTOS EXTERNOS",st:"ACTIVO",ac:"Supervisor",mant:false},
+  {id:"G02",n:"Corte de suministro eléctrico / agua",f:"TIEMPOS MUERTOS",s1:"EVENTOS EXTERNOS",st:"ACTIVO",ac:"Supervisor",mant:false},
+  {id:"G03",n:"Corte de carbónico",f:"TIEMPOS MUERTOS",s1:"EVENTOS EXTERNOS",st:"ACTIVO",ac:"Supervisor",mant:false},
+  {id:"G04",n:"Siniestro / accidente",f:"TIEMPOS MUERTOS",s1:"EVENTOS EXTERNOS",st:"ACTIVO",ac:"Supervisor",mant:false},
+  {id:"G05",n:"Lavado por quiebre de botella",f:"TIEMPOS MUERTOS",s1:"EVENTOS EXTERNOS",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"H01",n:"Cambio de filtro de agua",f:"TIEMPOS MUERTOS",s1:"FILTRACIÓN",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"H02",n:"Filtros / placa de vino tapados",f:"TIEMPOS MUERTOS",s1:"FILTRACIÓN",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"X01",n:"No clasificado – alerta supervisor",f:"TIEMPOS MUERTOS",s1:"NO CLASIFICADO",st:"NUEVO",ac:"Sistema",mant:false},
+  {id:"Z01",n:"[Desact.] Fallas operacionales P33–P54",f:"TIEMPOS MUERTOS",s1:"DESACTIVADOS",st:"DESACTIVADO",ac:"—",mant:false},
+  {id:"Z02",n:"[Desact.] Fallas de máquina P6–P27",f:"TIEMPOS MUERTOS",s1:"DESACTIVADOS",st:"DESACTIVADO",ac:"—",mant:false},
+  {id:"Z03",n:"[Desact.] Cierre de turno P75",f:"TIEMPOS MUERTOS",s1:"DESACTIVADOS",st:"DESACTIVADO",ac:"—",mant:false},
+  {id:"Z04",n:"[Desact.] Colación / cena P60",f:"TIEMPOS MUERTOS",s1:"DESACTIVADOS",st:"DESACTIVADO",ac:"—",mant:false},
+  {id:"Z05",n:"[Desact.] Cuadratura cierre turno P77",f:"TIEMPOS MUERTOS",s1:"DESACTIVADOS",st:"DESACTIVADO",ac:"—",mant:false},
+  {id:"Z06",n:"[Desact.] Cambio personal P61/P86",f:"TIEMPOS MUERTOS",s1:"DESACTIVADOS",st:"DESACTIVADO",ac:"—",mant:false},
+  {id:"Z07",n:"[Desact.] Prueba insumo máquina P62",f:"TIEMPOS MUERTOS",s1:"DESACTIVADOS",st:"DESACTIVADO",ac:"—",mant:false},
+  {id:"Z08",n:"[Desact.] Capacitación / charlas P64",f:"TIEMPOS MUERTOS",s1:"DESACTIVADOS",st:"DESACTIVADO",ac:"—",mant:false},
+  {id:"DA1",n:"Detención máquina anterior",f:"DETENCION OTRA MAQUINA",s1:"EFECTO CASCADA",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"DA2",n:"Detención máquina posterior",f:"DETENCION OTRA MAQUINA",s1:"EFECTO CASCADA",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S01",n:"Lavado de máquina",f:"SET UP",s1:"LÍNEA ENVASADO DIRECTO",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S02",n:"Cambio de botella",f:"SET UP",s1:"LÍNEA ENVASADO DIRECTO",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S03",n:"Cambio de vino (igual / menor cat.)",f:"SET UP",s1:"LÍNEA ENVASADO DIRECTO",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S04",n:"Cambio de vino (mayor cat. / Velcorin)",f:"SET UP",s1:"LÍNEA ENVASADO DIRECTO",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S05",n:"Cambio de cierre (screw / corcho)",f:"SET UP",s1:"LÍNEA ENVASADO DIRECTO",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S06",n:"Cambio de cápsula",f:"SET UP",s1:"LÍNEA ENVASADO DIRECTO",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S07",n:"Cambio en etiquetadora",f:"SET UP",s1:"LÍNEA ENVASADO DIRECTO",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S08",n:"Cambio encajonado / paletizado",f:"SET UP",s1:"LÍNEA ENVASADO DIRECTO",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S09",n:"Lavado de máquina",f:"SET UP",s1:"LÍNEA ENVASADO ESPUMANTE",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S10",n:"Cambio de vino / espumante",f:"SET UP",s1:"LÍNEA ENVASADO ESPUMANTE",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S11",n:"Cambio de botella",f:"SET UP",s1:"LÍNEA ENVASADO ESPUMANTE",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S12",n:"Cambio de cierre / corcho espumante",f:"SET UP",s1:"LÍNEA ENVASADO ESPUMANTE",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S13",n:"Cambio de botella (capacidad / forma)",f:"SET UP",s1:"LÍNEA ETIQUETADO",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S14",n:"Cambio de producto / cepa",f:"SET UP",s1:"LÍNEA ETIQUETADO",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S15",n:"Cambio de cápsula / etiqueta",f:"SET UP",s1:"LÍNEA ETIQUETADO",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"S16",n:"Cambio encajonado / paletizado",f:"SET UP",s1:"LÍNEA ETIQUETADO",st:"ACTIVO",ac:"Operador",mant:false},
+  {id:"M01",n:"Aviso de falla – alerta temprana",f:"ALERTA MANTENCION",s1:"AVISO DE FALLA",st:"ACTIVO",ac:"Operador",mant:true},
+  {id:"M02",n:"Riesgo detectado sin detención aún",f:"ALERTA MANTENCION",s1:"AVISO DE FALLA",st:"NUEVO",ac:"Operador",mant:true},
+];
+
+let tree=[
+  {id:"tm",name:"TIEMPOS MUERTOS",exp:false,codes:["A01","A02","A03","A04","B01","B02","B03","B04","B05","B06","C01","C02","C03","D01","D02","E01","E02","F01","F02","F03","F04","F05","F06","F07","G01","G02","G03","G04","G05","H01","H02","X01","Z01","Z02","Z03","Z04","Z05","Z06","Z07","Z08"]},
+  {id:"su",name:"SET UP",exp:false,codes:["S01","S02","S03","S04","S05","S06","S07","S08","S09","S10","S11","S12","S13","S14","S15","S16"]},
+  {id:"dm",name:"DETENCION OTRA MAQUINA",exp:false,codes:["DA1","DA2"]},
+  {id:"am",name:"ALERTA MANTENCION",exp:false,codes:["M01","M02"]},
+];
+
+let curTab="op",modCb=null,op={fam:null,grupo:null,cod:null,submitted:false},ms={equipo:null,causa:null,subcausa:null};
+
+const byId=id=>POOL.find(c=>c.id===id);
+const now=()=>new Date().toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+
+function setTab(t){
+  curTab=t;
+  document.getElementById("vcfg").style.display=t==="cfg"?"block":"none";
+  document.getElementById("vop").style.display=t==="op"?"block":"none";
+  document.getElementById("tc").classList.toggle("on",t==="cfg");
+  document.getElementById("to").classList.toggle("on",t==="op");
+  if(t==="op")rOp();
+  if(t==="cfg")rFamList();
+}
+
+function rFamList(){
+  const el=document.getElementById("famList");el.innerHTML="";
+  tree.forEach(f=>el.appendChild(mkFamSection(f)));
+  rStats();
+}
+
+function mkFamSection(f){
+  const sec=document.createElement("div");sec.className="fam-section";
+  const col=gc(f.name,"c"),bg=gc(f.name,"bg"),tx=gc(f.name,"tx");
+  const activos=f.codes.filter(cid=>{const c=byId(cid);return c&&c.st!=="DESACTIVADO"}).length;
+
+  const toggle=document.createElement("div");toggle.className="fam-toggle"+(f.exp?" exp":"");
+  toggle.innerHTML=`<div class="fam-stripe" style="background:${col}"></div>
+    <div class="fam-name">${f.name}</div>
+    <span class="fam-count" style="background:${bg};color:${tx}">${activos}</span>
+    <i class="ti ti-chevron-down fam-chev${f.exp?" up":""}" aria-hidden="true"></i>`;
+  toggle.addEventListener("click",()=>{f.exp=!f.exp;rFamList()});
+  sec.appendChild(toggle);
+
+  const body=document.createElement("div");body.className="fam-body"+(f.exp?" show":"");
+  if(f.exp){
+    const grps={};
+    f.codes.forEach(cid=>{const c=byId(cid);if(!c)return;const g=c.s1||"General";if(!grps[g])grps[g]=[];grps[g].push(c)});
+    Object.entries(grps).forEach(([g,codes])=>{
+      const gb=document.createElement("div");gb.className="grp-block";
+      const many=Object.keys(grps).length>1;
+      if(many){
+        const lbl=document.createElement("div");lbl.className="grp-label";
+        lbl.innerHTML=`<i class="ti ti-folder" aria-hidden="true"></i>${g}`;
+        gb.appendChild(lbl);
+      }
+      codes.forEach(c=>gb.appendChild(mkCodeRow(c)));
+      body.appendChild(gb);
+    });
+  }
+  sec.appendChild(body);
+  return sec;
+}
+
+function mkCodeRow(c){
+  const r=document.createElement("div");r.className="code-row";
+  const stCls=c.st==="ACTIVO"?"st-activo":c.st==="NUEVO"?"st-nuevo":"st-desact";
+  const dim=c.st==="DESACTIVADO"?"opacity:.55;text-decoration:line-through;":"";
+  r.style.cssText=dim;
+  r.innerHTML=`<span class="code-id">${c.id}</span>
+    <span class="code-name">${c.n}</span>
+    <span class="code-badges">
+      ${c.mant?`<i class="ti ti-tools mant-flag" aria-hidden="true"></i>`:""}
+      <span class="st-dot ${stCls}"></span>
+    </span>`;
+  return r;
+}
+
+function rStats(){
+  const all=tree.flatMap(f=>f.codes);
+  const act=all.filter(cid=>{const c=byId(cid);return c&&c.st!=="DESACTIVADO"}).length;
+  const des=all.length-act;
+  const c2=all.filter(cid=>{const c=byId(cid);return c&&c.mant}).length;
+  document.getElementById("sbar").innerHTML=`
+    <div class="stat-card"><div class="stat-n ${act<=45?"stat-ok":"stat-wn"}">${act}</div><div class="stat-l">Activos</div></div>
+    <div class="stat-card"><div class="stat-n stat-er">${des}</div><div class="stat-l">Desact.</div></div>
+    <div class="stat-card"><div class="stat-n">${act?Math.round(c2/act*100):0}%</div><div class="stat-l">Capa mant.</div></div>`;
+}
+
+function resetOp(){op={fam:null,grupo:null,cod:null,submitted:false};ms={equipo:null,causa:null,subcausa:null};rOp()}
+
+function rOp(){
+  const wrap=document.getElementById("opsim");wrap.innerHTML="";
+  if(op.submitted){renderReg(wrap);return}
+
+  const famMap={};
+  tree.forEach(f=>{
+    const ac=f.codes.map(byId).filter(c=>c&&c.st!=="DESACTIVADO");
+    if(!ac.length)return;
+    const grps={};ac.forEach(c=>{const g=c.s1||"Gen";if(!grps[g])grps[g]=[];grps[g].push(c)});
+    famMap[f.name]={grps,meta:FC[f.name]};
+  });
+  const fns=Object.keys(famMap);
+
+  mkStep(wrap,1,"Familia de detención",false,true,()=>{
+    const dw=document.createElement("div");dw.className="bigselect-wrap";
+    const s=mkSel([{v:"",l:"Selecciona la familia…"},...fns.map(n=>({v:n,l:n}))],op.fam,v=>{op.fam=v||null;op.grupo=null;op.cod=null;rOp()});
+    if(op.fam)s.classList.add("filled");
+    dw.appendChild(s);dw.appendChild(mkArr());return dw;
+  });
+  if(!op.fam)return;
+  addLine(wrap);
+
+  const fd=famMap[op.fam];
+  const gns=Object.keys(fd.grps);
+
+  mkStep(wrap,2,"Sub-categoría",false,true,()=>{
+    const outer=document.createElement("div");
+    outer.appendChild(mkCrumb([{t:op.fam,bg:fd.meta.bg,tx:fd.meta.tx}]));
+    const dw=document.createElement("div");dw.className="bigselect-wrap";
+    const s=mkSel([{v:"",l:"Selecciona la sub-categoría…"},...gns.map(g=>({v:g,l:`${g} (${fd.grps[g].length})`}))],op.grupo,v=>{op.grupo=v||null;op.cod=null;rOp()});
+    if(op.grupo)s.classList.add("filled");
+    dw.appendChild(s);dw.appendChild(mkArr());outer.appendChild(dw);return outer;
+  });
+  if(!op.grupo)return;
+  addLine(wrap);
+
+  const cods=fd.grps[op.grupo];
+  mkStep(wrap,3,"Código de detención",false,true,()=>{
+    const outer=document.createElement("div");
+    outer.appendChild(mkCrumb([{t:op.fam,bg:fd.meta.bg,tx:fd.meta.tx},{sep:1},{t:op.grupo,bg:"#F0F2F5",tx:"#434448"}]));
+    const dw=document.createElement("div");dw.className="bigselect-wrap";
+    const s=mkSel([{v:"",l:"Selecciona el código…"},...cods.map(c=>({v:c.id,l:`${c.id} — ${c.n}`}))],op.cod,v=>{op.cod=v||null;rOp()});
+    if(op.cod)s.classList.add("filled");
+    dw.appendChild(s);dw.appendChild(mkArr());outer.appendChild(dw);return outer;
+  });
+  if(!op.cod)return;
+  addLine(wrap);
+
+  const code=byId(op.cod);
+  mkStep(wrap,4,"Confirmar declaración",false,true,()=>{
+    const outer=document.createElement("div");
+    const cc=document.createElement("div");cc.className="confirm-block";
+    cc.innerHTML=`<div class="confirm-top">
+      <div class="confirm-circle"><i class="ti ti-clipboard-check" style="font-size:18px;color:var(--mts-success)" aria-hidden="true"></i></div>
+      <div><div class="confirm-title">${code.id} — ${code.n}</div><div class="confirm-sub">${op.fam} › ${op.grupo}</div></div>
+    </div>
+    <div class="confirm-rows">
+      <div class="crow"><span class="lb">Familia</span><span class="vl">${op.fam}</span></div>
+      <div class="crow"><span class="lb">Sub-categoría</span><span class="vl">${op.grupo}</span></div>
+      <div class="crow"><span class="lb">Código</span><span class="vl" style="font-family:var(--mono)">${code.id}</span></div>
+      <div class="crow"><span class="lb">Actor</span><span class="vl">${code.ac}</span></div>
+      ${code.mant?`<div class="crow"><span class="lb">Capa 2 mant.</span><span class="vl" style="color:var(--mts-warning)">Pendiente</span></div>`:""}
+    </div>`;
+    outer.appendChild(cc);
+
+    if(code.mant){
+      const mb=document.createElement("div");mb.className="mant-block";
+      mb.innerHTML=`<div class="mant-head"><i class="ti ti-tools" style="font-size:15px" aria-hidden="true"></i><span>Capa 2 — Mantenimiento</span><span class="mant-badge">post-intervención</span></div>`;
+
+      const needsEq=["A01","A02","A03","A04","M01","M02"].includes(code.id);
+      if(needsEq){
+        const erow=document.createElement("div");erow.className="eq-row";
+        EQUIPOS.forEach(eq=>{
+          const btn=document.createElement("button");btn.className="eq-btn"+(ms.equipo===eq?" on":"");
+          btn.textContent=eq;
+          btn.addEventListener("click",()=>{ms.equipo=eq;ms.causa=null;ms.subcausa=null;rOp()});
+          erow.appendChild(btn);
+        });
+        mb.appendChild(erow);
+      }
+
+      if(!needsEq||ms.equipo){
+        const clbl=document.createElement("div");clbl.className="section-lbl-m";
+        clbl.innerHTML=`<i class="ti ti-tag" aria-hidden="true"></i>Causa padre`;
+        mb.appendChild(clbl);
+
+        const cg=document.createElement("div");cg.className="causa-grid-m";
+        Object.entries(MC).forEach(([causa,meta])=>{
+          const btn=document.createElement("button");btn.className="causa-btn-m"+(ms.causa===causa?" on":"");
+          btn.innerHTML=`<div class="causa-dot-m" style="background:${meta.color}"></div>${causa}`;
+          btn.addEventListener("click",()=>{ms.causa=causa;ms.subcausa=null;rOp()});
+          cg.appendChild(btn);
+        });
+        mb.appendChild(cg);
+
+        if(ms.causa){
+          const slbl=document.createElement("div");slbl.className="section-lbl-m";
+          slbl.innerHTML=`<i class="ti ti-list" aria-hidden="true"></i>Sub-causa`;
+          mb.appendChild(slbl);
+          const sdw=document.createElement("div");sdw.className="bigselect-wrap";sdw.style.marginBottom="12px";
+          const ss=mkSel([{v:"",l:"Selecciona la sub-causa…"},...MC[ms.causa].sub.map(s=>({v:s,l:s}))],ms.subcausa,v=>{ms.subcausa=v||null;rOp()});
+          if(ms.subcausa)ss.classList.add("filled");
+          sdw.appendChild(ss);sdw.appendChild(mkArr());mb.appendChild(sdw);
+        }
+
+        const flds=document.createElement("div");flds.className="field-grid";
+        flds.innerHTML=`
+          <div class="field-row2">
+            <select><option>Equipo…</option><option>Llenadora L1</option><option>Llenadora L3</option><option>Llenadora L4</option><option>Etiq. L1</option><option>Etiq. L2</option><option>Etiq. L3</option><option>Etiq. L4</option></select>
+            <select><option>Turno…</option><option>Turno A</option><option>Turno B</option><option>Turno C</option></select>
+          </div>
+          <input type="text" placeholder="Componente específico afectado">
+          <textarea placeholder="Descripción libre de causa raíz y acción tomada…"></textarea>`;
+        mb.appendChild(flds);
+      }
+      outer.appendChild(mb);
+    }
+
+    const ar=document.createElement("div");ar.className="action-row-m";
+    ar.innerHTML=`<button class="tap-btn" style="flex:0 0 100px" onclick="resetOp()"><i class="ti ti-x" aria-hidden="true"></i>Cancelar</button>
+      <button class="tap-btn primary" onclick="submitOp()"><i class="ti ti-check" aria-hidden="true"></i>Registrar</button>`;
+    outer.appendChild(ar);
+    return outer;
+  });
+}
+
+function submitOp(){op.submitted=true;rOp()}
+
+function renderReg(wrap){
+  const code=byId(op.cod);
+  const fmeta=FC[op.fam];
+  const t=now();
+  const mantOk=code.mant&&ms.causa;
+  const mantSummary=mantOk?`${ms.equipo||""}${ms.equipo?" › ":""}${ms.causa}${ms.subcausa?" › "+ms.subcausa:""}`:null;
+
+  const rc=document.createElement("div");rc.className="reg-block";
+  rc.innerHTML=`<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px">
+    <div style="width:42px;height:42px;border-radius:50%;background:var(--mts-success-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <i class="ti ti-check" style="font-size:20px;color:var(--mts-success)" aria-hidden="true"></i>
+    </div>
+    <div><div style="font-size:15px;font-weight:600;color:var(--mts-success)">Detención registrada</div>
+    <div class="reg-stamp">mtsolutions · ${t}</div></div>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+    <span class="crumb" style="background:${fmeta.bg};color:${fmeta.tx}">${op.fam}</span>
+    <span class="crumb-sep">›</span>
+    <span class="crumb" style="background:var(--bg-2);color:var(--mts-ink)">${op.grupo}</span>
+    <span class="crumb-sep">›</span>
+    <span class="crumb" style="background:var(--bg-2);color:var(--mts-ink);font-family:var(--mono)">${code.id}</span>
+  </div>
+  <div style="border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px">
+    <div class="crow"><span class="lb">Código</span><span class="vl" style="font-family:var(--mono)">${code.id}</span></div>
+    <div class="crow"><span class="lb">Actor</span><span class="vl">${code.ac}</span></div>
+    <div class="crow"><span class="lb">Timestamp</span><span class="vl" style="font-family:var(--mono)">${t}</span></div>
+    ${code.mant?`<div class="crow" style="border:none"><span class="lb">Capa 2</span><span class="vl" style="color:${mantOk?"var(--mts-success)":"var(--mts-warning)"}">${mantOk?mantSummary:"Pendiente"}</span></div>`:""}
+  </div>
+  ${code.mant&&!mantOk?`<div class="alert-box"><i class="ti ti-tools" aria-hidden="true"></i>Mantención debe completar la capa 2</div>`:""}`;
+
+  const nb=document.createElement("button");nb.className="tap-btn primary";nb.style.cssText="width:100%;height:48px;margin-top:14px";
+  nb.innerHTML=`<i class="ti ti-plus" aria-hidden="true"></i>Nueva declaración`;
+  nb.addEventListener("click",resetOp);
+  wrap.appendChild(rc);wrap.appendChild(nb);
+}
+
+function mkStep(c,num,lbl,dn,act,fn){
+  const s=document.createElement("div");s.className="step-block";
+  const hd=document.createElement("div");hd.className="step-head";
+  const n=document.createElement("div");n.className="step-circle"+(dn?" dn":act?" act":"");
+  n.innerHTML=dn?`<i class="ti ti-check" aria-hidden="true"></i>`:num;
+  const l=document.createElement("div");l.className="step-text"+(act?" act":"");l.textContent=lbl;
+  hd.appendChild(n);hd.appendChild(l);s.appendChild(hd);s.appendChild(fn());c.appendChild(s);
+}
+function addLine(c){const d=document.createElement("div");d.className="step-line";c.appendChild(d)}
+function mkArr(){const a=document.createElement("i");a.className="ti ti-chevron-down bigselect-arrow";a.setAttribute("aria-hidden","true");return a}
+function mkSel(opts,val,onChange){
+  const s=document.createElement("select");s.className="bigselect";
+  opts.forEach(o=>{const e=document.createElement("option");e.value=o.v;e.textContent=o.l;if(val===o.v)e.selected=true;s.appendChild(e)});
+  s.addEventListener("change",()=>onChange(s.value));return s;
+}
+function mkCrumb(items){
+  const r=document.createElement("div");r.className="crumb-row";
+  items.forEach(it=>{
+    if(it.sep){const sp=document.createElement("span");sp.className="crumb-sep";sp.textContent="›";r.appendChild(sp)}
+    else{const c=document.createElement("span");c.className="crumb";c.style.background=it.bg;c.style.color=it.tx;c.textContent=it.t;r.appendChild(c)}
+  });
+  return r;
+}
+
+function openNC(){
+  showModal("Nuevo código",`
+    <label>ID</label><input id="m-id" placeholder="P99">
+    <label>Descripción</label><input id="m-n" placeholder="Nombre del motivo">
+    <label>Familia</label><select id="m-f">${Object.keys(FC).map(f=>`<option>${f}</option>`).join("")}</select>
+    <label>Sub-categoría</label><input id="m-s1" placeholder="PLANIFICACIÓN">
+    <label>Estado</label><select id="m-st"><option>ACTIVO</option><option>NUEVO</option><option>DESACTIVADO</option></select>
+    <label>Actor</label><select id="m-ac"><option>Operador</option><option>Operador → Mant.</option><option>Supervisor</option><option>Planificación</option><option>Sistema</option></select>
+    <label>¿Capa 2 mantenimiento?</label><select id="m-mant"><option value="0">No</option><option value="1">Sí</option></select>`,
+    ()=>{
+      const id=document.getElementById("m-id").value.trim();
+      const n=document.getElementById("m-n").value.trim();
+      if(!id||!n){toast("ID y descripción obligatorios");return}
+      if(POOL.find(c=>c.id===id)){toast("ID ya existe");return}
+      POOL.push({id,n,f:document.getElementById("m-f").value,s1:document.getElementById("m-s1").value.trim(),
+        st:document.getElementById("m-st").value,ac:document.getElementById("m-ac").value,
+        mant:document.getElementById("m-mant").value==="1"});
+      const fam=tree.find(x=>x.name===document.getElementById("m-f").value);
+      if(fam&&!fam.codes.includes(id))fam.codes.push(id);
+      closeModal();rFamList();toast("Código "+id+" creado");
+    });
+}
+
+function openNF(){
+  showModal("Nueva familia",`
+    <label>Nombre</label><input id="m-fn" placeholder="NOMBRE FAMILIA">`,
+    ()=>{
+      const n=document.getElementById("m-fn").value.trim().toUpperCase();
+      if(!n){toast("Nombre obligatorio");return}
+      if(tree.find(f=>f.name===n)){toast("Ya existe");return}
+      FC[n]={c:"#6B6E76",bg:"#F0F2F5",tx:"#434448"};
+      tree.push({id:"f"+Date.now(),name:n,codes:[],exp:false});
+      closeModal();rFamList();toast("Familia "+n+" creada");
+    });
+}
+
+function showModal(title,body,onOk){
+  const bg=document.createElement("div");bg.className="modal-bg-m";bg.id="modalBg";
+  bg.addEventListener("click",e=>{if(e.target===bg)closeModal()});
+  const m=document.createElement("div");m.className="modal-m";m.onclick=e=>e.stopPropagation();
+  m.innerHTML=`<h3>${title}</h3><div>${body}</div>
+    <div class="modal-actions-m">
+      <button class="tap-btn" onclick="closeModal()">Cancelar</button>
+      <button class="tap-btn primary" id="modalOkBtn">Confirmar</button>
+    </div>`;
+  bg.appendChild(m);
+  document.body.appendChild(bg);
+  document.getElementById("modalOkBtn").addEventListener("click",onOk);
+}
+function closeModal(){const m=document.getElementById("modalBg");if(m)m.remove()}
+
+function doExp(){
+  const all=tree.flatMap(f=>f.codes);
+  const out={cliente:"Undurraga",version:"Propuesta v1",emitido:new Date().toLocaleString("es-CL"),
+    motivos_mantencion:Object.fromEntries(Object.entries(MC).map(([k,v])=>[k,v.sub])),
+    familias:tree.map(f=>({nombre:f.name,codigos:f.codes.map(cid=>{const c=byId(cid);return c?{id:c.id,descripcion:c.n,sub1:c.s1,estado:c.st,actor:c.ac,capa2_mantencion:c.mant}:{id:cid}})}))};
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}));
+  a.download="arbol_undurraga_v1.json";a.click();toast("JSON exportado");
+}
+
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),2000)}
+
+rOp();
+</script>
+</body>
+</html>
